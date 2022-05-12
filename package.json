@@ -1,0 +1,39 @@
+{
+  "scripts": {
+    "toKeystore": "hardhat toKeystore",
+    "fromKeystore": "hardhat fromKeystore",
+    "compile": "hardhat compile",
+    "enode": "hardhat node --no-deploy",
+    "tags": "hardhat --network $NETWORK deploy --tags",
+    "console": "hardhat --network $NETWORK console",
+    "test": "hardhat test"
+  },
+  "dependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.4",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "@openzeppelin/contracts": "^4.4.1",
+    "@openzeppelin/contracts-upgradeable": "^4.4.1",
+    "@openzeppelin/hardhat-upgrades": "^1.12.1",
+    "@typechain/ethers-v5": "^9.0.0",
+    "@typechain/hardhat": "^4.0.0",
+    "@types/mocha": "^9.1.0",
+    "chai": "^4.3.6",
+    "erc721a": "^3.3.0",
+    "ethereum-waffle": "^3.4.0",
+    "ethers": "^5.6.0",
+    "hardhat": "^2.8.2",
+    "hardhat-deploy": "^0.9.24",
+    "solidity-coverage": "^0.7.17",
+    "ts-node": "^10.4.0",
+    "typechain": "^7.0.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.14.0",
+    "@typescript-eslint/parser": "^5.14.0",
+    "eslint": "^8.10.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-plugin-mocha": "^10.0.3",
+    "tslint": "^6.1.3",
+    "typescript": "^4.6.2"
+  }
+}
