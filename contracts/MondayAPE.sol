@@ -9,21 +9,51 @@ import "./MintPass.sol";
 import "./AuthAPE.sol";
 
 contract MondayAPE is ERC721A,Ownable {
+    event Mint(uint256 apeId, uint256 startId, uint256 quantity);
+    event BatchMint(uint256[] apeId, uint256 startId, uint256[] quantity);
+    uint256 constant public TOTAL_SUPPLY = 5000;
+    uint256 constant private LIMIT_PER_APE = 30;
     MintPass immutable public MINTPASS;
     AuthAPE immutable public AUTH_APE;
     uint256 public MintTime;
     string private _uri;
+    mapping(uint256=>uint256) public apeMinted; // apeId => amount of mondayApe base the ape
     constructor(IERC721 _bAPE, IERC721 _APE) ERC721A("MondayAPE", "MAPE") {
         MINTPASS = new MintPass(_bAPE, _APE, IERC721(address(this)));
         AUTH_APE = new AuthAPE(MINTPASS);
         MINTPASS.transferOwnership(msg.sender);
     }
 
+
+    function _mint(uint256 quantity) private {
+        MINTPASS.burn(msg.sender, quantity);
+        ERC721A._safeMint(msg.sender, quantity);
+        require(ERC721A.totalSupply() <= TOTAL_SUPPLY, "exceed TOTAL_SUPPLY");
+    }
+
     function mint(uint256 apeId, uint256 quantity) external {
         require(MintTime > 0 && block.timestamp > MintTime, "not start");
         require(MINTPASS.apeOwner(apeId) == msg.sender, "only APE owner");
-        MINTPASS.burn(msg.sender, quantity);
-        _safeMint(msg.sender, quantity);
+        apeMinted[apeId] += quantity;
+        require(apeMinted[apeId] < LIMIT_PER_APE, "exceed Mint Limit");
+        emit Mint(apeId, ERC721A.totalSupply(), quantity);
+        _mint(quantity);
+    }
+
+    function batchMint(uint256[] calldata apeIds, uint256[] calldata quantities) external {
+        require(MintTime > 0 && block.timestamp > MintTime, "not start");
+        require(apeIds.length == quantities.length, "different length");
+        uint256 totalQuantity;
+        for(uint256 i = 0; i < apeIds.length; i++) {
+            uint256 apeId = apeIds[i];
+            uint256 quantity = quantities[i];
+            require(MINTPASS.apeOwner(apeId) == msg.sender, "only APE owner");
+            apeMinted[apeId] += quantity;
+            require(apeMinted[apeId] < LIMIT_PER_APE, "exceed Mint Limit");
+            totalQuantity += quantity;
+        }
+        emit BatchMint(apeIds, ERC721A.totalSupply(), quantities);
+        _mint(totalQuantity);
     }
 
     function _baseURI() internal view override(ERC721A) returns (string memory) {

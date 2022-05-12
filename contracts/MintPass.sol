@@ -12,7 +12,7 @@ contract MintPass is ERC1155(""),Ownable {
     string constant public symbol = "MapeMintPass";
     uint256 constant public TOTAL_SUPPLY = 5000;
     uint256 constant public MINT_PRICE = 0.3 ether;
-    uint256 constant public START_TIME = 1652358675;
+    uint256 public MintTime;
     IERC721 immutable public bAPE; // bendDao APE
     IERC721 immutable public APE; // APE
     IERC721 immutable public MondayAPE;
@@ -31,7 +31,7 @@ contract MintPass is ERC1155(""),Ownable {
 
     function mint(uint256 apeId, uint256 amount) external payable {
         require(totalSupply++ < TOTAL_SUPPLY, "sold out");
-        require(block.timestamp > START_TIME, "not start");
+        require(MintTime > 0 && block.timestamp > MintTime, "not start");
         require(msg.value == amount * MINT_PRICE, "invalid ethers amount");
         require(apeOwner(apeId) == msg.sender, "only APE owner");
         ERC1155._mint(msg.sender, 0, amount, "");
@@ -48,6 +48,11 @@ contract MintPass is ERC1155(""),Ownable {
     /* ===================== admin ===================== */
     function setURI(string calldata newuri) external onlyOwner {
         ERC1155._setURI(newuri);
+    }
+
+    function setMintTime(uint256 timestamp) external onlyOwner {
+        require(MintTime == 0 && block.timestamp < timestamp, "setMintTime");
+        MintTime = timestamp;
     }
 
     function withdraw() external {
