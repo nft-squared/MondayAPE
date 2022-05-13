@@ -15,15 +15,23 @@ contract MondayAPE is ERC721A,Ownable {
     uint256 constant private LIMIT_PER_APE = 30;
     MintPass immutable public MINTPASS;
     AuthAPE immutable public AUTH_APE;
+    IERC721 immutable public bAPE; // bendDao APE
+    IERC721 immutable public APE; // APE
     uint256 public MintTime;
     string private _uri;
     mapping(uint256=>uint256) public apeMinted; // apeId => amount of mondayApe base the ape
     constructor(IERC721 _bAPE, IERC721 _APE) ERC721A("MondayAPE", "MAPE") {
-        MINTPASS = new MintPass(_bAPE, _APE, IERC721(address(this)));
-        AUTH_APE = new AuthAPE(MINTPASS);
+        bAPE = _bAPE;
+        APE = _APE;
+        MINTPASS = new MintPass(IERC721(address(this)));
+        AUTH_APE = new AuthAPE(this);
         MINTPASS.transferOwnership(msg.sender);
     }
 
+    function apeOwner(uint256 tokenId) public view returns(address) {
+	    address owner = IERC721(APE).ownerOf(tokenId);
+	    return owner == address(bAPE) ? IERC721(address(bAPE)).ownerOf(tokenId) : owner;
+    }
 
     function _mint(uint256 quantity) private {
         MINTPASS.burn(msg.sender, quantity);
@@ -33,7 +41,7 @@ contract MondayAPE is ERC721A,Ownable {
 
     function mint(uint256 apeId, uint256 quantity) external {
         require(MintTime > 0 && block.timestamp > MintTime, "not start");
-        require(MINTPASS.apeOwner(apeId) == msg.sender, "only APE owner");
+        require(apeOwner(apeId) == msg.sender, "only APE owner");
         apeMinted[apeId] += quantity;
         require(apeMinted[apeId] < LIMIT_PER_APE, "exceed Mint Limit");
         emit Mint(apeId, ERC721A.totalSupply(), quantity);
@@ -47,7 +55,7 @@ contract MondayAPE is ERC721A,Ownable {
         for(uint256 i = 0; i < apeIds.length; i++) {
             uint256 apeId = apeIds[i];
             uint256 quantity = quantities[i];
-            require(MINTPASS.apeOwner(apeId) == msg.sender, "only APE owner");
+            require(apeOwner(apeId) == msg.sender, "only APE owner");
             apeMinted[apeId] += quantity;
             require(apeMinted[apeId] < LIMIT_PER_APE, "exceed Mint Limit");
             totalQuantity += quantity;

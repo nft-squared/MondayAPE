@@ -13,27 +13,17 @@ contract MintPass is ERC1155(""),Ownable {
     uint256 constant public TOTAL_SUPPLY = 5000;
     uint256 constant public MINT_PRICE = 0.3 ether;
     uint256 public MintTime;
-    IERC721 immutable public bAPE; // bendDao APE
-    IERC721 immutable public APE; // APE
     IERC721 immutable public MondayAPE;
     uint256 public totalSupply;
 
-    constructor(IERC721 _bAPE, IERC721 _APE, IERC721 _MondayAPE) {
-        bAPE = _bAPE;
-        APE = _APE;
+    constructor(IERC721 _MondayAPE) {
         MondayAPE = _MondayAPE;
     }
 
-    function apeOwner(uint256 tokenId) public view returns(address) {
-	    address owner = IERC721(APE).ownerOf(tokenId);
-	    return owner == address(bAPE) ? IERC721(address(bAPE)).ownerOf(tokenId) : owner;
-    }
-
-    function mint(uint256 apeId, uint256 amount) external payable {
+    function mint(uint256 amount) external payable {
         require(totalSupply++ < TOTAL_SUPPLY, "sold out");
         require(MintTime > 0 && block.timestamp > MintTime, "not start");
         require(msg.value == amount * MINT_PRICE, "invalid ethers amount");
-        require(apeOwner(apeId) == msg.sender, "only APE owner");
         ERC1155._mint(msg.sender, 0, amount, "");
     }
 
