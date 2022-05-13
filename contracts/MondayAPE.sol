@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "erc721a/contracts/ERC721A.sol";
 import "./MintPass.sol";
 import "./AuthAPE.sol";
-
 contract MondayAPE is ERC721A,Ownable {
     event Mint(uint256 apeId, uint256 startId, uint256 quantity);
     event BatchMint(uint256[] apeId, uint256 startId, uint256[] quantity);
@@ -57,7 +56,7 @@ contract MondayAPE is ERC721A,Ownable {
             uint256 quantity = quantities[i];
             require(apeOwner(apeId) == msg.sender, "only APE owner");
             apeMinted[apeId] += quantity;
-            require(apeMinted[apeId] < LIMIT_PER_APE, "exceed Mint Limit");
+            require(apeMinted[apeId] < LIMIT_PER_APE, "exceed Limit Per APE");
             totalQuantity += quantity;
         }
         emit BatchMint(apeIds, ERC721A.totalSupply(), quantities);

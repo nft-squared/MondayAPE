@@ -21,8 +21,9 @@ contract MintPass is ERC1155(""),Ownable {
     }
 
     function mint(uint256 amount) external payable {
-        require(totalSupply++ < TOTAL_SUPPLY, "sold out");
         require(MintTime > 0 && block.timestamp > MintTime, "not start");
+        totalSupply += amount;
+        require(totalSupply < TOTAL_SUPPLY, "sold out");
         require(msg.value == amount * MINT_PRICE, "invalid ethers amount");
         ERC1155._mint(msg.sender, 0, amount, "");
     }
@@ -45,7 +46,7 @@ contract MintPass is ERC1155(""),Ownable {
         MintTime = timestamp;
     }
 
-    function withdraw() external {
+    function withdraw() external onlyOwner {
         payable(Ownable.owner()).transfer(address(this).balance);
     }
 }
