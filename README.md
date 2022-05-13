@@ -25,3 +25,5 @@ app = new hre.APP()
 await app.deployAll(BendDAO_APE, APE)
 {AuthAPE, MintPass, MockAPE, MockBAPE: BAPE, MondayAPE: APE} = app
 ```
+
+> If set the environment variable `NETENV`, it will auto record contract address into `record_${NETENV}.json` when deploy contracts. And would automatically create contract object and inject it into HRE objects, you can access via `hre.app` in hardhat console.
