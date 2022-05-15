@@ -23,6 +23,7 @@
     "ethers": "^5.6.0",
     "hardhat": "^2.8.2",
     "hardhat-deploy": "^0.9.24",
+    "merkletreejs": "^0.2.31",
     "solidity-coverage": "^0.7.17",
     "ts-node": "^10.4.0",
     "typechain": "^7.0.0"

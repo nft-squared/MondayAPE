@@ -1,10 +1,12 @@
-import chai from 'chai';
-import {solidity} from 'ethereum-waffle';
-import {ethers} from 'hardhat';
-import { BigNumber } from 'ethers';
+import chai from 'chai'
+import {solidity} from 'ethereum-waffle'
+import {ethers} from 'hardhat'
+import { BigNumber } from 'ethers'
 
 import { App } from '../helps/app'
-import {increaseBlockTime, duration} from './helps/time';
+import {increaseBlockTime, duration} from './helps/time'
+import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers'
+import MerkelTree from 'merkletreejs'
 
 chai.use(solidity);
 const {expect} = chai;
@@ -39,34 +41,34 @@ describe('AllTest', () => {
         const mintPass = app.MintPass
         await expect(
             mintPass.connect(this.user).setMintTime(now()+10),
-        ).to.be.reverted // ErrOnlyOnwer
+        ).reverted // ErrOnlyOnwer
         await expect(
             mintPass.setMintTime(now()-1000)
-        ).to.be.reverted
+        ).reverted
         await mintPass.setMintTime(now()+30)
         await expect(
             mintPass.setMintTime(now()+100)
-        ).to.be.reverted
+        ).reverted
     })
 
     it('MintPass Mint', async function () {
         const app = this.app as App
         const mintPass = app.MintPass.connect(this.user)
-        await expect(mintPass.mint(1)).to.be.reverted //'not start'
+        await expect(mintPass.mint(1)).reverted //'not start'
         await increaseBlockTime(duration.seconds(BigNumber.from(10)))
-        await expect(mintPass.mint(1)).to.be.reverted // 'invalid ethers amount'
+        await expect(mintPass.mint(1)).reverted // 'invalid ethers amount'
         const MINT_PRICE = await mintPass.MINT_PRICE()
         const TOTAL_SUPPLY = await mintPass.TOTAL_SUPPLY() 
         await expect(
             mintPass.mint(TOTAL_SUPPLY.add(1), {value:MINT_PRICE.mul(TOTAL_SUPPLY.add(1))})
-        ).to.be.reverted // 'sold out'
+        ).reverted // 'sold out'
         await mintPass.mint(10, {value: MINT_PRICE.mul(10)})
     })
     
     it('MintPass SetURI', async function () {
         const app = this.app as App
         const mintPass = app.MintPass
-        await expect(mintPass.connect(this.user).setURI("xxx"), ErrOnlyOnwer).to.be.reverted
+        await expect(mintPass.connect(this.user).setURI("xxx"), ErrOnlyOnwer).reverted
         await mintPass.setURI("https://")
         await mintPass.setURI("ipfs://")
     })
@@ -74,31 +76,51 @@ describe('AllTest', () => {
     it('MintPass Withdraw', async function () {
         const app = this.app as App
         const mintPass = app.MintPass
-        await expect(mintPass.connect(this.user).withdraw(), ErrOnlyOnwer).to.be.reverted
+        await expect(mintPass.connect(this.user).withdraw(), ErrOnlyOnwer).reverted
         const before = await ethers.provider.getBalance(this.admin.address)
         await mintPass.connect(this.admin).withdraw()
         const after = await ethers.provider.getBalance(this.admin.address)
         expect(after.sub(before)).gt(0)
     })
 
+    it('MintPass Merkel Claim', async function () {
+        const app = this.app as App
+        const mintPass = app.MintPass
+        const signers = this.signers as SignerWithAddress[]
+        const keccak256 = ethers.utils.keccak256
+        const leaves = signers.map(signer=>keccak256(signer.address)) // leaves is the keccak256(address) list
+        const tree = new MerkelTree(leaves, keccak256, {sort:true})
+        const root = tree.getHexRoot()
+        console.log('root:', root)
+        await expect(mintPass.connect(this.user).setMerkelRoot(root)).reverted // onlyOwner
+        await mintPass.setMerkelRoot(root)
+        await expect(mintPass.setMerkelRoot(root)).reverted // change root hash again
+        for(const signer of signers) {
+            const leafHash = keccak256(signer.address)
+            const proof = tree.getHexProof(leafHash)
+            await mintPass.connect(signer).claim(root, proof)
+            await expect(mintPass.connect(signer).claim(root, proof)).reverted // claim twice
+        }
+    })
+
     it('MondayAPE Start Time', async function() {
         const app = this.app as App
         const mondayAPE = app.MondayAPE
-        await expect(mondayAPE.connect(this.user).setMintTime(now()+10)).to.be.reverted // OnlyOnwer
-        await expect(mondayAPE.setMintTime(now()-1000)).to.be.reverted // 'setMintTime'
+        await expect(mondayAPE.connect(this.user).setMintTime(now()+10)).reverted // OnlyOnwer
+        await expect(mondayAPE.setMintTime(now()-1000)).reverted // 'setMintTime'
         await mondayAPE.setMintTime(now()+300)
-        await expect(mondayAPE.setMintTime(now()+3000)).to.be.reverted // 'setMintTime'
+        await expect(mondayAPE.setMintTime(now()+3000)).reverted // 'setMintTime'
     })
 
     it('MondayAPE Mint', async function () {
         const app = this.app as App
         const mondayAPE = app.MondayAPE.connect(this.user)
-        await expect(mondayAPE.mint(0, 2)).to.be.reverted // 'not start'
+        await expect(mondayAPE.mint(0, 2)).reverted // 'not start'
         await increaseBlockTime(duration.seconds(BigNumber.from(400)))
-        await expect(mondayAPE.mint(0, 200)).to.be.reverted // failed, only have 10 mint pass
-        await expect(mondayAPE.mint(1000, 2)).to.be.reverted //  'only APE owner'
+        await expect(mondayAPE.mint(0, 200)).reverted // failed, only have 10 mint pass
+        await expect(mondayAPE.mint(1000, 2)).reverted //  'only APE owner'
         const LIMIT_PER_APE = 30
-        await expect(mondayAPE.mint(0, LIMIT_PER_APE+1)).to.be.reverted // 'exceed Limit Per APE'
+        await expect(mondayAPE.mint(0, LIMIT_PER_APE+1)).reverted // 'exceed Limit Per APE'
         await mondayAPE.mint(0, 2)
         await mondayAPE.mint(15, 2)
         await mondayAPE.batchMint([1,16], [2,2])
@@ -108,7 +130,7 @@ describe('AllTest', () => {
     it('MondayAPE SetURI', async function () {
         const app = this.app as App
         const mondayAPE = app.MondayAPE
-        await expect(mondayAPE.connect(this.user).setURI("xxx"), ErrOnlyOnwer).to.be.reverted
+        await expect(mondayAPE.connect(this.user).setURI("xxx"), ErrOnlyOnwer).reverted
         await mondayAPE.setURI("https://")
         await mondayAPE.setURI("ipfs://")
     })
@@ -119,7 +141,7 @@ describe('AllTest', () => {
         const AuthAPE = app.AuthAPE.connect(this.user)
         const message = Buffer.alloc(32)
         message.write("hello world!");
-        expect(AuthAPE.auth(1000, message)).to.be.reverted
+        expect(AuthAPE.auth(1000, message)).reverted
         AuthAPE.auth(1, message)
     })
     

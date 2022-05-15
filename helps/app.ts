@@ -1,13 +1,10 @@
 /* eslint-disable camelcase */
 import '@nomiclabs/hardhat-ethers';
 import '@openzeppelin/hardhat-upgrades';
-
-import {simpleWallet} from './utils';
-
+import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers'
 import {MondayAPE__factory, MockAPE__factory,MockBAPE__factory, MintPass__factory, AuthAPE__factory} from '../typechain'
 import {MondayAPE, MockAPE,MockBAPE,AuthAPE,MintPass} from '../typechain'
 import {deployF, contractAtF} from './deployer';
-import {BigNumberish} from 'ethers';
 
 /**
  * App is the application that deploy whitelist contracts for test.
@@ -47,11 +44,11 @@ export class App {
 
     /**
      * Signers from hardhat.
-     * @return {simpleWallet[]} the signers wallets from hardhat
+     * @return {SignerWithAddress[]} the signers wallets from hardhat
      */
-    get signers(): Promise<simpleWallet[]> {
+    get signers(): Promise<SignerWithAddress[]> {
         const hre = require('hardhat');
         const {ethers} = hre;
-        return ethers.getSigners() as Promise<simpleWallet[]>;
+        return ethers.getSigners();
     }
 }
