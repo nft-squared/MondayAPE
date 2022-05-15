@@ -1,9 +1,5 @@
 import '@typechain/hardhat';
 import '@nomiclabs/hardhat-ethers';
-import '@nomiclabs/hardhat-waffle';
-import '@openzeppelin/hardhat-upgrades';
-import 'hardhat-deploy';
-import 'solidity-coverage';
 import {extendEnvironment, task} from 'hardhat/config';
 import {Wallet} from 'ethers';
 
@@ -25,39 +21,8 @@ const prikeys = () => {
 };
 
 extendEnvironment(async (hre: any) => {
-    if (process.argv.includes('compile')) return; // skip compile
-    // getter setter?
-    if (!fs.existsSync(hre.config.typechain.outDir)) return;
     const {App} = require('./helps/app'); // reference compilation result
     hre.APP = App;
-    const netenv = process.env.NETENV;
-    if (!netenv) {
-        console.log('export NETENV=XXX // local,mainnet,testnet');
-        return;
-    }
-    if (hre.hardhatArguments.network == undefined) {
-        return;
-    }
-    let wait = (_:any)=>{};
-    hre.wait = new Promise((resolve)=>{
-        if (hre.app) resolve(hre.app);
-        wait = resolve;
-    });
-    hre.netenv = netenv.toLowerCase();
-    hre.Record = `record_${hre.netenv}.json`;
-    // hre.Chains = "chains_testnet.json";
-    hre.Chains = `chains_${hre.netenv}.json`;
-    hre.chainId = await hre.getChainId();
-    {
-        console.log(
-            `---------------------using NETWORK ${hre.network.name.toUpperCase()}`,
-        );
-        hre.AppFile = `APP_${hre.network.name}.ts`;
-        // reference compilation result
-        const contractLoad = require('./helps/load.js');
-        hre.app = await contractLoad();
-        wait(hre.app);
-    }
 });
 
 task('toKeystore', 'encrypt private key and save to keystore')

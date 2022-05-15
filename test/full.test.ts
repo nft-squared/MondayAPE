@@ -91,7 +91,6 @@ describe('AllTest', () => {
         const leaves = signers.map(signer=>keccak256(signer.address)) // leaves is the keccak256(address) list
         const tree = new MerkelTree(leaves, keccak256, {sort:true})
         const root = tree.getHexRoot()
-        console.log('root:', root)
         await expect(mintPass.connect(this.user).setMerkelRoot(root)).reverted // onlyOwner
         await mintPass.setMerkelRoot(root)
         await expect(mintPass.setMerkelRoot(root)).reverted // change root hash again
