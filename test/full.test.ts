@@ -6,7 +6,7 @@ import { BigNumber } from 'ethers'
 import { App } from '../helps/app'
 import {increaseBlockTime, duration} from './helps/time'
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers'
-import MerkelTree from 'merkletreejs'
+import MerkleTree from 'merkletreejs'
 
 chai.use(solidity);
 const {expect} = chai;
@@ -58,7 +58,7 @@ describe('AllTest', () => {
         await increaseBlockTime(duration.seconds(BigNumber.from(10)))
         await expect(mintPass.mint(1)).reverted // 'invalid ethers amount'
         const MINT_PRICE = await mintPass.MINT_PRICE()
-        const TOTAL_SUPPLY = await mintPass.TOTAL_SUPPLY() 
+        const TOTAL_SUPPLY = await mintPass.MAX_SUPPLY() 
         await expect(
             mintPass.mint(TOTAL_SUPPLY.add(1), {value:MINT_PRICE.mul(TOTAL_SUPPLY.add(1))})
         ).reverted // 'sold out'
@@ -83,22 +83,29 @@ describe('AllTest', () => {
         expect(after.sub(before)).gt(0)
     })
 
-    it('MintPass Merkel Claim', async function () {
+    it('MintPass Merkle Claim', async function () {
         const app = this.app as App
         const mintPass = app.MintPass
         const signers = this.signers as SignerWithAddress[]
         const keccak256 = ethers.utils.keccak256
-        const leaves = signers.map(signer=>keccak256(signer.address)) // leaves is the keccak256(address) list
-        const tree = new MerkelTree(leaves, keccak256, {sort:true})
+        const encodePacked= ethers.utils.solidityPack
+        const airdropList = signers.map(signer=>[signer.address, parseInt(signer.address.slice(-1), 16)%5+1])
+        const leaves = airdropList.map(airdrop=>keccak256(encodePacked(['address','uint256'], airdrop))) // leaves is the keccak256(address) list
+        const tree = new MerkleTree(leaves, keccak256, {sort:true})
         const root = tree.getHexRoot()
-        await expect(mintPass.connect(this.user).setMerkelRoot(root)).reverted // onlyOwner
-        await mintPass.setMerkelRoot(root)
-        await expect(mintPass.setMerkelRoot(root)).reverted // change root hash again
-        for(const signer of signers) {
-            const leafHash = keccak256(signer.address)
+        await expect(mintPass.connect(this.user).setMerkleRoot(root)).reverted // onlyOwner
+        await mintPass.setMerkleRoot(root)
+        await expect(mintPass.setMerkleRoot(root)).reverted // change root hash again
+        const AirdropMerkleRoot = await mintPass.AirdropMerkleRoot()
+        expect(AirdropMerkleRoot).equal(root)
+        for(const i in signers) {
+            const signer = signers[i]
+            const amount = airdropList[i][1]
+            console.log(signer.address, amount, airdropList[i])
+            const leafHash = keccak256(encodePacked(['address','uint256'], airdropList[i]))
             const proof = tree.getHexProof(leafHash)
-            await mintPass.connect(signer).claim(root, proof)
-            await expect(mintPass.connect(signer).claim(root, proof)).reverted // claim twice
+            await mintPass.connect(signer).claim(proof, amount)
+            await expect(mintPass.connect(signer).claim(proof, amount)).reverted // claim twice
         }
     })
 
@@ -122,7 +129,6 @@ describe('AllTest', () => {
         await expect(mondayAPE.mint(0, LIMIT_PER_APE+1)).reverted // 'exceed Limit Per APE'
         await mondayAPE.mint(0, 2)
         await mondayAPE.mint(15, 2)
-        await mondayAPE.batchMint([1,16], [2,2])
     })
 
 
