@@ -101,7 +101,6 @@ describe('AllTest', () => {
         for(const i in signers) {
             const signer = signers[i]
             const amount = airdropList[i][1]
-            console.log(signer.address, amount, airdropList[i])
             const leafHash = keccak256(encodePacked(['address','uint256'], airdropList[i]))
             const proof = tree.getHexProof(leafHash)
             await mintPass.connect(signer).claim(proof, amount)
