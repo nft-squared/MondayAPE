@@ -1,4 +1,5 @@
 import '@typechain/hardhat';
+import '@openzeppelin/hardhat-upgrades';
 import '@nomiclabs/hardhat-ethers';
 import {extendEnvironment, task} from 'hardhat/config';
 import {Wallet} from 'ethers';

@@ -2,12 +2,14 @@
 
 pragma solidity ^0.8.4;
 
+import {OwnableUpgradeable as Ownable} from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import "./MondayAPE.sol";
 
-contract AuthAPE {
-    MondayAPE immutable public MONDAY_APE;
+contract AuthAPE is Ownable {
+    MondayAPE public MONDAY_APE;
     mapping(uint256=>address) approver;
-    constructor(MondayAPE _MONDAY_APE) {
+    function initialize(MondayAPE _MONDAY_APE) external initializer {
+        Ownable.__Ownable_init();
         MONDAY_APE = _MONDAY_APE;
     }
     event Auth(uint256 indexed apeId, address indexed apeOwner, bytes32 apeMessage);

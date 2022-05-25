@@ -2,27 +2,26 @@
 
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import {MerkleProofUpgradeable as MerkleProof} from '@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgradeable.sol';
+import {ERC1155Upgradeable as ERC1155} from '@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol';
+import {IERC721Upgradeable as IERC721} from '@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol';
+import {OwnableUpgradeable as Ownable} from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 
-contract MintPass is ERC1155(""), Ownable {
+contract MintPass is ERC1155, Ownable {
     string public constant name = "MondayAPE MintPass";
     string public constant symbol = "MapeMintPass";
     uint256 public constant MAX_SUPPLY = 5000;
     uint256 public constant MAX_AIRDROP = 500;
     uint256 public constant MINT_PRICE = 0.3 ether;
     uint256 public MintTime;
-    IERC721 public immutable MondayAPE;
+    IERC721 public MondayAPE;
     uint256 public totalMint;
     uint256 public totalAirdrop;
     bytes32 public AirdropMerkleRoot;
     mapping(address=>bool) public claimed;
 
-    constructor(IERC721 _MondayAPE) {
-        MondayAPE = _MondayAPE;
+    function initialize() external initializer {
+        Ownable.__Ownable_init();
     }
 
     function totalSupply() external view returns(uint256) {
@@ -85,5 +84,9 @@ contract MintPass is ERC1155(""), Ownable {
 
     function withdraw() external onlyOwner {
         payable(Ownable.owner()).transfer(address(this).balance);
+    }
+
+    function setMondayAPE(IERC721 _MondayAPE) external onlyOwner {
+        MondayAPE = _MondayAPE;
     }
 }

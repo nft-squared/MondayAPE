@@ -13,7 +13,6 @@ const {expect} = chai;
 
 const now = ()=> Math.floor(Number(new Date())/1000)
 
-const ErrOnlyOnwer = 'Ownable: caller is not the owner'
 describe('AllTest', () => {
     before(async function() {
         const app = new App()
@@ -68,7 +67,7 @@ describe('AllTest', () => {
     it('MintPass SetURI', async function () {
         const app = this.app as App
         const mintPass = app.MintPass
-        await expect(mintPass.connect(this.user).setURI("xxx"), ErrOnlyOnwer).reverted
+        await expect(mintPass.connect(this.user).setURI("xxx")).reverted
         await mintPass.setURI("https://")
         await mintPass.setURI("ipfs://")
     })
@@ -76,7 +75,7 @@ describe('AllTest', () => {
     it('MintPass Withdraw', async function () {
         const app = this.app as App
         const mintPass = app.MintPass
-        await expect(mintPass.connect(this.user).withdraw(), ErrOnlyOnwer).reverted
+        await expect(mintPass.connect(this.user).withdraw()).reverted
         const before = await ethers.provider.getBalance(this.admin.address)
         await mintPass.connect(this.admin).withdraw()
         const after = await ethers.provider.getBalance(this.admin.address)
@@ -134,7 +133,7 @@ describe('AllTest', () => {
     it('MondayAPE SetURI', async function () {
         const app = this.app as App
         const mondayAPE = app.MondayAPE
-        await expect(mondayAPE.connect(this.user).setURI("xxx"), ErrOnlyOnwer).reverted
+        await expect(mondayAPE.connect(this.user).setURI("xxx")).reverted
         await mondayAPE.setURI("https://")
         await mondayAPE.setURI("ipfs://")
     })
