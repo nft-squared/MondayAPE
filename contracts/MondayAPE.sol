@@ -6,6 +6,7 @@ import {IERC721Upgradeable as IERC721} from '@openzeppelin/contracts-upgradeable
 import {OwnableUpgradeable as Ownable} from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import {MathUpgradeable as Math} from '@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol';
 import {ERC721AUpgradeable as ERC721A} from "./ERC721A/ERC721AUpgradeable.sol";
+import {IBNFTRegistry} from './BendDAO/IBNFTRegistry.sol';
 import "./MintPass.sol";
 contract MondayAPE is Ownable,ERC721A {
     event Mint(uint256 apeId, uint256 startId, uint256 quantity);
@@ -13,7 +14,7 @@ contract MondayAPE is Ownable,ERC721A {
     uint256 constant public MAX_SUPPLY = 5000;
     uint256 constant private MAX_PER_APE = 30;
     MintPass public MINTPASS;
-    IERC721 public bBAYC; // bendDao BAYC
+    IBNFTRegistry public BNFTRegistry; // bendDao BAYC
     IERC721 public BAYC; // BAYC
     uint256 public MintTime;
     string private _uri;
@@ -25,10 +26,10 @@ contract MondayAPE is Ownable,ERC721A {
     }
     MintLog[] public mintLogs;
 
-    function initialize(IERC721 _bBAYC, IERC721 _BAYC, MintPass _MINTPASS) external initializer {
+    function initialize(IBNFTRegistry _BNFTRegistry, IERC721 _BAYC, MintPass _MINTPASS) external initializer {
         Ownable.__Ownable_init();
         ERC721A.__ERC721A_init("MondayAPE", "MAPE");
-        bBAYC = _bBAYC;
+        BNFTRegistry = _BNFTRegistry;
         BAYC = _BAYC;
         MINTPASS = _MINTPASS;
     }
@@ -39,8 +40,9 @@ contract MondayAPE is Ownable,ERC721A {
      * @return address owner of ape
      */
     function apeOwner(uint256 tokenId) public view returns(address) {
-	    address owner = IERC721(BAYC).ownerOf(tokenId);
-	    return owner == address(bBAYC) ? IERC721(address(bBAYC)).ownerOf(tokenId) : owner;
+	    address owner = BAYC.ownerOf(tokenId);
+	    (address bBAYC,) = BNFTRegistry.getBNFTAddresses(address(BAYC));
+        return owner == address(bBAYC) ? IERC721(address(bBAYC)).ownerOf(tokenId) : owner;
     }
 
     function recordMintLog(uint256 apeId, uint256 quantity, uint256 curSupply) internal {

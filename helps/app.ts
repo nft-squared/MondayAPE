@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 import {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers'
-import {MondayAPE__factory, MockAPE__factory,MockBAPE__factory, MintPass__factory, AuthAPE__factory} from '../typechain'
-import {MondayAPE, MockAPE,MockBAPE,AuthAPE,MintPass} from '../typechain'
+import {MondayAPE__factory, MockAPE__factory,MockBendDAO__factory, MintPass__factory, AuthAPE__factory} from '../typechain'
+import {MondayAPE, MockAPE,MockBendDAO, AuthAPE,MintPass} from '../typechain'
 import {HardhatUpgrades} from '@openzeppelin/hardhat-upgrades';
 
 /**
@@ -10,14 +10,14 @@ import {HardhatUpgrades} from '@openzeppelin/hardhat-upgrades';
 export class App {
     MondayAPE!:MondayAPE
     MockAPE!:MockAPE
-    MockBAPE!:MockBAPE
+    MockBAPE!:MockBendDAO
     AuthAPE!:AuthAPE
     MintPass!:MintPass
 
     async deployMock() {
         const [deployer] = await this.signers
         this.MockAPE = await (new MockAPE__factory(deployer)).deploy()
-        this.MockBAPE = await (new MockBAPE__factory(deployer)).deploy(this.MockAPE.address)
+        this.MockBAPE = await (new MockBendDAO__factory(deployer)).deploy(this.MockAPE.address)
     }
 
     async deployMintPass() {
