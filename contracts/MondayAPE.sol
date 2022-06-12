@@ -6,45 +6,30 @@ import {IERC721Upgradeable as IERC721} from '@openzeppelin/contracts-upgradeable
 import {OwnableUpgradeable as Ownable} from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import {MathUpgradeable as Math} from '@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol';
 import {ERC721AUpgradeable as ERC721A} from "./ERC721A/ERC721AUpgradeable.sol";
-import {IBNFTRegistry} from './BendDAO/IBNFTRegistry.sol';
-import "./MintPass.sol";
+
+import { Bits } from './Bits.sol';
+
 contract MondayAPE is Ownable,ERC721A {
-    event Mint(uint256 apeId, uint256 startId, uint256 quantity);
-    event BatchMint(uint256[] apeId, uint256 startId, uint256[] quantity);
-    uint256 constant public MAX_SUPPLY = 5000;
+    using Bits for uint256;
+    event Mint(uint256 apeId, uint256 startId, uint256 bits);
     uint256 constant private MAX_PER_APE = 30;
-    MintPass public MINTPASS;
-    IBNFTRegistry public BNFTRegistry; // bendDao BAYC
-    IERC721 public BAYC; // BAYC
-    uint256 public MintTime;
+    uint256 constant private MASK_PER_APE = (1<<MAX_PER_APE)-1;
+    mapping(uint256=>uint256) public apeBitmap;
+    address public mintController;
     string private _uri;
-    mapping(uint256=>uint256) public apeMinted; // apeId => amount of mondayApe base the ape
     struct MintLog {
-        uint32 apeId;
-        uint32 mapeId;
-        uint32 amount;
+        uint32 apeId; // bayc tokenId
+        uint32 mapeId; // mondayApe start tokenId
+        uint32 amount; // mint amount
     }
     MintLog[] public mintLogs;
 
-    function initialize(IBNFTRegistry _BNFTRegistry, IERC721 _BAYC, MintPass _MINTPASS) external initializer {
+    function initialize() external initializer {
         Ownable.__Ownable_init();
         ERC721A.__ERC721A_init("MondayAPE", "MAPE");
-        BNFTRegistry = _BNFTRegistry;
-        BAYC = _BAYC;
-        MINTPASS = _MINTPASS;
     }
 
-    /**
-     * @notice apeOwner return owner of APE, even though it's staked in BendDAO
-     * @param tokenId ID of ape
-     * @return address owner of ape
-     */
-    function apeOwner(uint256 tokenId) public view returns(address) {
-	    address owner = BAYC.ownerOf(tokenId);
-	    (address bBAYC,) = BNFTRegistry.getBNFTAddresses(address(BAYC));
-        return owner == address(bBAYC) ? IERC721(address(bBAYC)).ownerOf(tokenId) : owner;
-    }
-
+    ///@dev record mintLog, used to binary search
     function recordMintLog(uint256 apeId, uint256 quantity, uint256 curSupply) internal {
         if (mintLogs.length == 0 || mintLogs[mintLogs.length-1].apeId != apeId) {
             mintLogs.push(MintLog({
@@ -52,15 +37,9 @@ contract MondayAPE is Ownable,ERC721A {
                 mapeId: uint32(curSupply),
                 amount: uint32(quantity)
             }));
-        }else{
+        } else {
             mintLogs[mintLogs.length-1].amount += uint32(quantity);
         }
-    }
-
-    function _mint(uint256 quantity) private {
-        MINTPASS.burn(msg.sender, quantity);
-        ERC721A._safeMint(msg.sender, quantity);
-        require(ERC721A.totalSupply() <= MAX_SUPPLY, "exceed MAX_SUPPLY");
     }
 
      function findAPE(uint256 mapeId) external view returns (uint256) {
@@ -80,19 +59,23 @@ contract MondayAPE is Ownable,ERC721A {
     }
 
     /**
-     * @notice mint mint new MondayApe based on ape ID 
+     * @notice mint mint new MondayApe based on ape ID
+     * @param to mape mint to
      * @param apeId ID of ape
-     * @param quantity amount to mint
+     * @param bits bits to mint
      */
-    function mint(uint256 apeId, uint256 quantity) external {
-        require(MintTime > 0 && block.timestamp > MintTime, "not start");
-        require(apeOwner(apeId) == msg.sender, "only BAYC owner");
-        apeMinted[apeId] += quantity;
-        require(apeMinted[apeId] < MAX_PER_APE, "exceed Mint Limit");
+    function mint(address to, uint256 apeId, uint256 bits) external {
+        require(msg.sender == mintController, "only controller");
+        uint256 bitmap = apeBitmap[apeId];
+        require(bits > 0 && bitmap & bits == 0, "invalid mint bits");
+        bitmap |= bits;
+        require(bitmap & ~MASK_PER_APE == 0, "30 ");
+        apeBitmap[apeId] = bitmap;
         uint256 currentSupply = ERC721A.totalSupply();
+        uint256 quantity = bits.countSetBits();
         recordMintLog(apeId, quantity, currentSupply);
-        emit Mint(apeId, currentSupply, quantity);
-        _mint(quantity);
+        emit Mint(apeId, currentSupply, bits);
+        ERC721A._safeMint(to, quantity);
     }
 
     function _baseURI() internal view override(ERC721A) returns (string memory) {
@@ -104,9 +87,7 @@ contract MondayAPE is Ownable,ERC721A {
     function setURI(string calldata newuri) external onlyOwner {
         _uri = newuri;
     }
-
-    function setMintTime(uint256 timestamp) external onlyOwner {
-        require(MintTime == 0 && block.timestamp < timestamp, "setMintTime");
-        MintTime = timestamp;
+    function setController(address controller) external onlyOwner {
+        mintController = controller;
     }
 }

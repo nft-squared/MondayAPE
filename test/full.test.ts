@@ -11,7 +11,10 @@ import MerkleTree from 'merkletreejs'
 chai.use(solidity);
 const {expect} = chai;
 
-const now = ()=> Math.floor(Number(new Date())/1000)
+const now = (min = 0)=> {
+    const x = Math.floor(Number(new Date())/1000)
+    return x<min ? min : x
+}
 
 describe('AllTest', () => {
     before(async function() {
@@ -35,56 +38,62 @@ describe('AllTest', () => {
         }
     });
 
-    it('MintPass Start Time', async function() {
+    it('MemberCard Start Time', async function() {
         const app = this.app as App
-        const mintPass = app.MintPass
+        const memberCard = app.MemberCard
+
+        const { timestamp } = await ethers.provider.getBlock('latest')
+        
         await expect(
-            mintPass.connect(this.user).setMintTime(now()+10),
-        ).reverted // ErrOnlyOnwer
-        await expect(
-            mintPass.setMintTime(now()-1000)
+            memberCard.connect(this.user).setMintTime(now(timestamp)+10),
         ).reverted
-        await mintPass.setMintTime(now()+30)
+
         await expect(
-            mintPass.setMintTime(now()+100)
+            memberCard.setMintTime(now(timestamp)-1000)
+        ).reverted
+
+        await memberCard.setMintTime(now(timestamp)+10)
+
+        await expect(
+            memberCard.setMintTime(now(timestamp)+100)
         ).reverted
     })
 
-    it('MintPass Mint', async function () {
+    it('MemberCard Mint', async function () {
         const app = this.app as App
-        const mintPass = app.MintPass.connect(this.user)
-        await expect(mintPass.mint(1)).reverted //'not start'
+        const memberCard = app.MemberCard.connect(this.user)
+        await expect(memberCard.mint(1)).reverted //'not start'
         await increaseBlockTime(duration.seconds(BigNumber.from(10)))
-        await expect(mintPass.mint(1)).reverted // 'invalid ethers amount'
-        const MINT_PRICE = await mintPass.MINT_PRICE()
-        const TOTAL_SUPPLY = await mintPass.MAX_SUPPLY() 
+        await expect(memberCard.mint(1)).reverted // 'invalid ethers amount'
+        const CARD_PRICE = await memberCard.CARD_PRICE()
+        const TOTAL_SUPPLY = await memberCard.MAX_SUPPLY() 
         await expect(
-            mintPass.mint(TOTAL_SUPPLY.add(1), {value:MINT_PRICE.mul(TOTAL_SUPPLY.add(1))})
+            memberCard.mint(TOTAL_SUPPLY.add(1), {value:CARD_PRICE.mul(TOTAL_SUPPLY.add(1))})
         ).reverted // 'sold out'
-        await mintPass.mint(10, {value: MINT_PRICE.mul(10)})
+        await memberCard.mint(10, {value: CARD_PRICE.mul(10)})
     })
     
-    it('MintPass SetURI', async function () {
+    it('MemberCard SetURI', async function () {
         const app = this.app as App
-        const mintPass = app.MintPass
-        await expect(mintPass.connect(this.user).setURI("xxx")).reverted
-        await mintPass.setURI("https://")
-        await mintPass.setURI("ipfs://")
+        const memberCard = app.MemberCard
+        await expect(memberCard.connect(this.user).setURI("xxx")).reverted
+        await memberCard.setURI("https://")
+        await memberCard.setURI("ipfs://")
     })
 
-    it('MintPass Withdraw', async function () {
+    it('MemberCard Withdraw', async function () {
         const app = this.app as App
-        const mintPass = app.MintPass
-        await expect(mintPass.connect(this.user).withdraw()).reverted
+        const memberCard = app.MemberCard
+        await expect(memberCard.connect(this.user).withdraw()).reverted
         const before = await ethers.provider.getBalance(this.admin.address)
-        await mintPass.connect(this.admin).withdraw()
+        await memberCard.connect(this.admin).withdraw()
         const after = await ethers.provider.getBalance(this.admin.address)
         expect(after.sub(before)).gt(0)
     })
 
-    it('MintPass Merkle Claim', async function () {
+    it('MemberCard Merkle Claim', async function () {
         const app = this.app as App
-        const mintPass = app.MintPass
+        const memberCard = app.MemberCard
         const signers = this.signers as SignerWithAddress[]
         const keccak256 = ethers.utils.keccak256
         const encodePacked= ethers.utils.solidityPack
@@ -92,43 +101,37 @@ describe('AllTest', () => {
         const leaves = airdropList.map(airdrop=>keccak256(encodePacked(['address','uint256'], airdrop))) // leaves is the keccak256(address) list
         const tree = new MerkleTree(leaves, keccak256, {sort:true})
         const root = tree.getHexRoot()
-        await expect(mintPass.connect(this.user).setMerkleRoot(root)).reverted // onlyOwner
-        await mintPass.setMerkleRoot(root)
-        await expect(mintPass.setMerkleRoot(root)).reverted // change root hash again
-        const AirdropMerkleRoot = await mintPass.AirdropMerkleRoot()
+        await expect(memberCard.connect(this.user).setMerkleRoot(root)).reverted // onlyOwner
+        await memberCard.setMerkleRoot(root)
+        await expect(memberCard.setMerkleRoot(root)).reverted // change root hash again
+        const AirdropMerkleRoot = await memberCard.AirdropMerkleRoot()
         expect(AirdropMerkleRoot).equal(root)
-        for(const i in signers) {
+        for(const i in signers.slice(0,-1)) {
             const signer = signers[i]
             const amount = airdropList[i][1]
             const leafHash = keccak256(encodePacked(['address','uint256'], airdropList[i]))
             const proof = tree.getHexProof(leafHash)
-            await mintPass.connect(signer).claim(proof, amount)
-            await expect(mintPass.connect(signer).claim(proof, amount)).reverted // claim twice
+            await memberCard.connect(signer).claim(proof, amount)
+            await expect(memberCard.connect(signer).claim(proof, amount)).reverted // claim twice
         }
-    })
-
-    it('MondayAPE Start Time', async function() {
-        const app = this.app as App
-        const mondayAPE = app.MondayAPE
-        await expect(mondayAPE.connect(this.user).setMintTime(now()+10)).reverted // OnlyOnwer
-        await expect(mondayAPE.setMintTime(now()-1000)).reverted // 'setMintTime'
-        await mondayAPE.setMintTime(now()+300)
-        await expect(mondayAPE.setMintTime(now()+3000)).reverted // 'setMintTime'
     })
 
     it('MondayAPE Mint', async function () {
         const app = this.app as App
         const mondayAPE = app.MondayAPE.connect(this.user)
-        await expect(mondayAPE.mint(0, 2)).reverted // 'not start'
-        await increaseBlockTime(duration.seconds(BigNumber.from(400)))
-        await expect(mondayAPE.mint(0, 200)).reverted // failed, only have 10 mint pass
-        await expect(mondayAPE.mint(1000, 2)).reverted //  'only APE owner'
-        const LIMIT_PER_APE = 30
-        await expect(mondayAPE.mint(0, LIMIT_PER_APE+1)).reverted // 'exceed Limit Per APE'
-        await mondayAPE.mint(0, 2)
-        await mondayAPE.mint(15, 2)
-    })
+        await expect(mondayAPE.mint(this.admin.address, 0, 2)).reverted
+        const memberCard = app.MemberCard
+        await expect(memberCard.mintMAPE(0, 1)).reverted
+        const signers = this.signers as SignerWithAddress[]
+        const user1 = signers.slice(-1)[0]
 
+        const CARD_PRICE = await memberCard.CARD_PRICE()
+        const MAPE_PRICE = await memberCard.MAPE_PRICE()
+        await memberCard.connect(user1).mintMAPE(0, 1, {value:MAPE_PRICE})
+        await expect(memberCard.connect(user1).mintMAPE(0, 1, {value:MAPE_PRICE})).reverted
+        await expect(memberCard.connect(user1).mintMAPE(0, 1<<31, {value:MAPE_PRICE})).reverted
+        await expect(memberCard.mintMAPE(0, 1<<31, {value:CARD_PRICE.sub(MAPE_PRICE)})).reverted
+    })
 
     it('MondayAPE SetURI', async function () {
         const app = this.app as App

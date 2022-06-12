@@ -6,7 +6,7 @@
     "enode": "hardhat node",
     "tags": "hardhat --network $NETWORK deploy --tags",
     "console": "hardhat --network $NETWORK console",
-    "test": "rm -rf cache ; hardhat test"
+    "test": "hardhat test"
   },
   "dependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.4",

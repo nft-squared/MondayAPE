@@ -3,23 +3,23 @@
 pragma solidity ^0.8.4;
 
 import {OwnableUpgradeable as Ownable} from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
-import "./MondayAPE.sol";
+import "./MemberCard.sol";
 
 contract AuthAPE is Ownable {
-    MondayAPE public MONDAY_APE;
+    MemberCard public memberCard;
     mapping(uint256=>address) approver;
-    function initialize(MondayAPE _MONDAY_APE) external initializer {
+    function initialize(MemberCard _memberCard) external initializer {
         Ownable.__Ownable_init();
-        MONDAY_APE = _MONDAY_APE;
+        memberCard = _memberCard;
     }
     event Auth(uint256 indexed apeId, address indexed apeOwner, bytes32 apeMessage);
     function auth(uint256 apeId, bytes32 apeMessage) external {
-        require(MONDAY_APE.apeOwner(apeId) == msg.sender, "only APE owner");
+        require(memberCard.apeOwner(apeId) == msg.sender, "only APE owner");
         approver[apeId] = msg.sender;
         emit Auth(apeId, msg.sender, apeMessage);
     }
 
     function authed(uint256 apeId) external view returns(bool) {
-        return MONDAY_APE.apeOwner(apeId) == approver[apeId];
+        return memberCard.apeOwner(apeId) == approver[apeId];
     }
 }
