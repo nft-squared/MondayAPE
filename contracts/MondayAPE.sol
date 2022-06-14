@@ -12,8 +12,6 @@ import { Bits } from './Bits.sol';
 contract MondayAPE is Ownable,ERC721A {
     using Bits for uint256;
     event Mint(uint256 apeId, uint256 startId, uint256 bits);
-    uint256 constant private MAX_PER_APE = 30;
-    uint256 constant private MASK_PER_APE = (1<<MAX_PER_APE)-1;
     mapping(uint256=>uint256) public apeBitmap;
     address public mintController;
     string private _uri;
@@ -68,9 +66,7 @@ contract MondayAPE is Ownable,ERC721A {
         require(msg.sender == mintController, "only controller");
         uint256 bitmap = apeBitmap[apeId];
         require(bits > 0 && bitmap & bits == 0, "invalid mint bits");
-        bitmap |= bits;
-        require(bitmap & ~MASK_PER_APE == 0, "30 ");
-        apeBitmap[apeId] = bitmap;
+        apeBitmap[apeId] = bitmap | bits;
         uint256 currentSupply = ERC721A.totalSupply();
         uint256 quantity = bits.countSetBits();
         recordMintLog(apeId, quantity, currentSupply);
