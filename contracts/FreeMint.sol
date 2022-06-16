@@ -59,12 +59,13 @@ contract FreeMint is Ownable, Controller {
     }
     ///@dev mint new MondayAPE
     function mint(uint256 apeId) external {
-        require(block.timestamp > mintConfig.startTime && block.timestamp < mintConfig.endTime, "free mint closed");
+        MintConfig memory cfg = mintConfig;
+        require(block.timestamp > cfg.startTime && block.timestamp < cfg.endTime, "free mint closed");
         require(apeOwner(apeId) == msg.sender, "only APE owner");
-        uint8 amount = mintConfig.maxPerOne;
+        uint8 amount = cfg.maxPerOne;
         (,uint256 minted) = mondayAPE.apeMinted(apeId);
         require(minted == 0, "already minted");
-        require(mondayAPE.totalSupply()+amount <= mintConfig.maxSupply, "free mint out");
+        require(mondayAPE.totalSupply()+amount <= cfg.maxSupply, "free mint out");
         uint256 bits = rndBits(RND(), amount);
         Controller._mint(msg.sender, apeId, bits&((1<<mintConfig.maxPerAPE)-1));
     }

@@ -15,6 +15,10 @@
         "hmy": {
             "url": "https://api.s0.b.hmny.io",
             "chainId": 1666700000
+        },
+        "rinkeby": {
+            "url": "https://rinkeby.infura.io/v3/1a2431ca526c4e50a0a01f861e48642a",
+            "chainId": 4
         }
     },
     "mainnet": {
