@@ -56,6 +56,11 @@ contract MondayAPE is Ownable,ERC721A {
         return log.apeId;
     }
 
+    function apeMinted(uint256 apeId) public view returns(uint256 bits,uint256 count) {
+        bits = apeBitmap[apeId];
+        count = bits.countSetBits();
+    }
+
     /**
      * @notice mint mint new MondayApe based on ape ID
      * @param to mape mint to

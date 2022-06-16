@@ -9,7 +9,7 @@ import {IBNFTRegistry} from './BendDAO/IBNFTRegistry.sol';
 import { MondayAPE } from './MondayAPE.sol';
 import { Controller } from './Controller.sol';
 
-contract MemberCard is Ownable, Controller {
+contract FreeMint is Ownable, Controller {
     uint16 public constant MAX_SUPPLY = 5000;
     uint8 constant private MAX_PER_APE = 20;
     uint8 constant private MAX_PER_ONE = 5;
@@ -58,10 +58,12 @@ contract MemberCard is Ownable, Controller {
         }
     }
     ///@dev mint new MondayAPE
-    function mint(uint256 apeId, uint8 amount) external {
+    function mint(uint256 apeId) external {
         require(block.timestamp > mintConfig.startTime && block.timestamp < mintConfig.endTime, "free mint closed");
         require(apeOwner(apeId) == msg.sender, "only APE owner");
-        require(amount <= mintConfig.maxPerOne, "mint too much");
+        uint8 amount = mintConfig.maxPerOne;
+        (,uint256 minted) = mondayAPE.apeMinted(apeId);
+        require(minted == 0, "already minted");
         require(mondayAPE.totalSupply()+amount <= mintConfig.maxSupply, "free mint out");
         uint256 bits = rndBits(RND(), amount);
         Controller._mint(msg.sender, apeId, bits&((1<<mintConfig.maxPerAPE)-1));
