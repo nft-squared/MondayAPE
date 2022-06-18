@@ -47,6 +47,10 @@
             "url": "https://arb1.arbitrum.io/rpc",
             "chainId": 42161,
             "gasMultiplier": 1
+        },
+        "eth": {
+            "url": "https://mainnet.infura.io/v3/1a2431ca526c4e50a0a01f861e48642a",
+            "chainId": 1
         }
     }
 }
