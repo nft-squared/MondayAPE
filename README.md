@@ -25,3 +25,11 @@ app = new hre.APP()
 await app.deployAll(BendDAO_APE, APE)
 {AuthAPE, MintPass, MockAPE, MockBAPE: BAPE, MondayAPE: APE} = app
 ```
+
+### Separate deployment
+```js
+app = new hre.APP()
+await app.deployMintPass()
+await app.deployMondayAPE(BendDAO_APE, APE, MintPass)
+await app.deployAuthAPE(MondayAPE)
+```

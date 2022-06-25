@@ -1,4 +1,5 @@
 import '@typechain/hardhat';
+import '@openzeppelin/hardhat-upgrades';
 import '@nomiclabs/hardhat-ethers';
 import {extendEnvironment, task} from 'hardhat/config';
 import {Wallet} from 'ethers';
@@ -20,9 +21,11 @@ const prikeys = () => {
     return [];
 };
 
-extendEnvironment(async (hre: any) => {
-    const {App} = require('./helps/app'); // reference compilation result
-    hre.APP = App;
+extendEnvironment((hre: any) => {
+    hre.APP = ()=>{
+        const {App} = require('./helps/app'); // reference compilation result
+        return App;
+    }
 });
 
 task('toKeystore', 'encrypt private key and save to keystore')
