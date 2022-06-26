@@ -17,13 +17,13 @@ contract MondayAPE is Ownable,ERC721A,IERC2981 {
     mapping(uint256=>uint256) public apeBitmap;
     address public mintController;
     string private _uri;
-    string private _contractUri;
     struct MintLog {
         uint32 apeId; // bayc tokenId
         uint32 mapeId; // mondayApe start tokenId
         uint32 amount; // mint amount
     }
     MintLog[] public mintLogs;
+    string private _contractUri;
 
     function initialize() external initializer {
         Ownable.__Ownable_init();
