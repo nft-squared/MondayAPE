@@ -1,6 +1,7 @@
 import '@typechain/hardhat';
 import '@openzeppelin/hardhat-upgrades';
 import '@nomiclabs/hardhat-ethers';
+import "@nomiclabs/hardhat-etherscan";
 import {extendEnvironment, task} from 'hardhat/config';
 import {Wallet} from 'ethers';
 
@@ -95,6 +96,11 @@ module.exports = {
         },
         ...networks(mainnet, 'main', prikeys()),
         ...networks(testnet, 'test', prikeys()),
+    },
+    etherscan: {
+        // Your API key for Etherscan
+        // Obtain one at https://etherscan.io/
+        apiKey: process.env.ETHERSCAN_APIKEY
     },
     solidity: {
         version: '0.8.8',

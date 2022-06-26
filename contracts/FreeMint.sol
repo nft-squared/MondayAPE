@@ -32,8 +32,8 @@ contract FreeMint is Ownable, Controller {
             startTime: 0,
             endTime: 0,
             maxSupply: MAX_SUPPLY,
-            maxPerOne: MAX_PER_APE,
-            maxPerAPE: MAX_PER_ONE
+            maxPerOne: MAX_PER_ONE,
+            maxPerAPE: MAX_PER_APE
         });
     }
 
@@ -48,7 +48,7 @@ contract FreeMint is Ownable, Controller {
         return owner == address(bBAYC) ? IERC721(address(bBAYC)).ownerOf(tokenId) : owner;
     }
     ///@dev simple random number
-    function RND() private view returns(uint256){
+    function RND() private view returns(uint256) {
         return uint256(keccak256(abi.encodePacked(msg.sender, block.timestamp)));
     }
     ///@dev gets the lowest amount bits of 1 
@@ -61,13 +61,12 @@ contract FreeMint is Ownable, Controller {
     function mint(uint256 apeId) external {
         MintConfig memory cfg = mintConfig;
         require(block.timestamp > cfg.startTime && block.timestamp < cfg.endTime, "free mint closed");
-        require(apeOwner(apeId) == msg.sender, "only APE owner");
         uint8 amount = cfg.maxPerOne;
         (,uint256 minted) = mondayAPE.apeMinted(apeId);
         require(minted == 0, "already minted");
         require(mondayAPE.totalSupply()+amount <= cfg.maxSupply, "free mint out");
         uint256 bits = rndBits(RND(), amount);
-        Controller._mint(msg.sender, apeId, bits&((1<<mintConfig.maxPerAPE)-1));
+        Controller._mint(apeOwner(apeId), apeId, bits&((1<<mintConfig.maxPerAPE)-1));
     }
 
     /* ===================== admin functions ===================== */
