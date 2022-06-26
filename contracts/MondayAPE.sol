@@ -17,6 +17,7 @@ contract MondayAPE is Ownable,ERC721A,IERC2981 {
     mapping(uint256=>uint256) public apeBitmap;
     address public mintController;
     string private _uri;
+    string private _contractUri;
     struct MintLog {
         uint32 apeId; // bayc tokenId
         uint32 mapeId; // mondayApe start tokenId
@@ -85,12 +86,17 @@ contract MondayAPE is Ownable,ERC721A,IERC2981 {
         return _uri;
     }
 
+    /// @dev opensea:contractURI: https://docs.opensea.io/docs/contract-level-metadata
+    function contractURI() public view returns (string memory) {
+        return _contractUri;
+    }
 
-    /* ===================== ERC2981:Royalty ===================== */
+    /// @dev ERC2981:Royalty
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721A,IERC165) returns (bool) {
         return interfaceId == type(IERC2981).interfaceId || super.supportsInterface(interfaceId);
     }
 
+    /// @dev ERC2981:Royalty
     function royaltyInfo(uint256 /*_tokenId*/, uint256 _salePrice) public view virtual override returns (address, uint256) {
         return (Ownable.owner(), _salePrice*5/100);
     }
@@ -99,6 +105,9 @@ contract MondayAPE is Ownable,ERC721A,IERC2981 {
 
     function setURI(string calldata newuri) external onlyOwner {
         _uri = newuri;
+    }
+    function setContractURI(string calldata newuri) external onlyOwner {
+        _contractUri = newuri;
     }
     function setController(address controller) external onlyOwner {
         mintController = controller;
