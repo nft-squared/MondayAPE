@@ -9,12 +9,9 @@ import {MathUpgradeable as Math} from '@openzeppelin/contracts-upgradeable/utils
 import {ERC721AUpgradeable as ERC721A} from "./ERC721A/ERC721AUpgradeable.sol";
 import {IERC165Upgradeable as IERC165} from '@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol';
 
-import { Bits } from './Bits.sol';
-
 contract MondayAPE is Ownable,ERC721A,IERC2981 {
-    using Bits for uint256;
-    event Mint(uint256 apeId, uint256 startId, uint256 bits);
-    mapping(uint256=>uint256) public apeBitmap;
+    event Mint(uint256 apeId, uint256 startId, uint256 amount);
+    mapping(uint256=>uint256) public apeMinted;
     address public mintController;
     string private _uri;
     struct MintLog {
@@ -59,26 +56,18 @@ contract MondayAPE is Ownable,ERC721A,IERC2981 {
         return log.apeId;
     }
 
-    function apeMinted(uint256 apeId) public view returns(uint256 bits,uint256 count) {
-        bits = apeBitmap[apeId];
-        count = bits.countSetBits();
-    }
-
     /**
      * @notice mint mint new MondayApe based on ape ID
      * @param to mape mint to
      * @param apeId ID of ape
-     * @param bits bits to mint
+     * @param quantity amount to mint
      */
-    function mint(address to, uint256 apeId, uint256 bits) external {
+    function mint(address to, uint256 apeId, uint256 quantity) external {
         require(msg.sender == mintController, "only controller");
-        uint256 bitmap = apeBitmap[apeId];
-        require(bits > 0 && bitmap & bits == 0, "invalid mint bits");
-        apeBitmap[apeId] = bitmap | bits;
+        apeMinted[apeId] += quantity;
         uint256 currentSupply = ERC721A.totalSupply();
-        uint256 quantity = bits.countSetBits();
         recordMintLog(apeId, quantity, currentSupply);
-        emit Mint(apeId, currentSupply, bits);
+        emit Mint(apeId, currentSupply, quantity);
         ERC721A._safeMint(to, quantity);
     }
 

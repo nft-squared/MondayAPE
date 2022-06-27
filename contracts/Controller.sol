@@ -6,7 +6,7 @@ import { MondayAPE } from './MondayAPE.sol';
 
 abstract contract Controller {
     MondayAPE public mondayAPE;
-    function _mint(address to, uint256 apeId, uint256 bits) internal {
-        mondayAPE.mint(to, apeId, bits);
+    function _mint(address to, uint256 apeId, uint256 amount) internal {
+        mondayAPE.mint(to, apeId, amount);
     }
 }

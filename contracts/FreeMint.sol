@@ -10,7 +10,7 @@ import { MondayAPE } from './MondayAPE.sol';
 import { Controller } from './Controller.sol';
 
 contract FreeMint is Ownable, Controller {
-    uint16 public constant MAX_SUPPLY = 5000;
+    uint16 constant private MAX_SUPPLY = 5000;
     uint8 constant private MAX_PER_APE = 20;
     uint8 constant private MAX_PER_ONE = 5;
     struct MintConfig {
@@ -47,26 +47,16 @@ contract FreeMint is Ownable, Controller {
 	    (address bBAYC,) = BNFTRegistry.getBNFTAddresses(address(BAYC));
         return owner == address(bBAYC) ? IERC721(address(bBAYC)).ownerOf(tokenId) : owner;
     }
-    ///@dev simple random number
-    function RND() private view returns(uint256) {
-        return uint256(keccak256(abi.encodePacked(msg.sender, block.timestamp)));
-    }
-    ///@dev gets the lowest amount bits of 1 
-    function rndBits(uint256 rnd, uint8 amount) private pure returns(uint256 mask) {
-        for(uint256 i = 0; i < amount; i++) {
-            mask |= rnd&~(rnd-1); rnd &= ~mask;
-        }
-    }
+
     ///@dev mint new MondayAPE
     function mint(uint256 apeId) external {
         MintConfig memory cfg = mintConfig;
         require(block.timestamp > cfg.startTime && block.timestamp < cfg.endTime, "free mint closed");
         uint8 amount = cfg.maxPerOne;
-        (,uint256 minted) = mondayAPE.apeMinted(apeId);
+        uint256 minted = mondayAPE.apeMinted(apeId);
         require(minted == 0, "already minted");
         require(mondayAPE.totalSupply()+amount <= cfg.maxSupply, "free mint out");
-        uint256 bits = rndBits(RND(), amount);
-        Controller._mint(apeOwner(apeId), apeId, bits&((1<<mintConfig.maxPerAPE)-1));
+        Controller._mint(apeOwner(apeId), apeId, amount);
     }
 
     /* ===================== admin functions ===================== */
