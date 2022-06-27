@@ -3,13 +3,15 @@
 pragma solidity ^0.8.4;
 
 import {IERC721Upgradeable as IERC721} from '@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol';
+import {IERC2981Upgradeable as IERC2981} from "@openzeppelin/contracts-upgradeable/interfaces/IERC2981Upgradeable.sol";
 import {OwnableUpgradeable as Ownable} from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import {MathUpgradeable as Math} from '@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol';
 import {ERC721AUpgradeable as ERC721A} from "./ERC721A/ERC721AUpgradeable.sol";
+import {IERC165Upgradeable as IERC165} from '@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol';
 
 import { Bits } from './Bits.sol';
 
-contract MondayAPE is Ownable,ERC721A {
+contract MondayAPE is Ownable,ERC721A,IERC2981 {
     using Bits for uint256;
     event Mint(uint256 apeId, uint256 startId, uint256 bits);
     mapping(uint256=>uint256) public apeBitmap;
@@ -21,6 +23,7 @@ contract MondayAPE is Ownable,ERC721A {
         uint32 amount; // mint amount
     }
     MintLog[] public mintLogs;
+    string private _contractUri;
 
     function initialize() external initializer {
         Ownable.__Ownable_init();
@@ -83,10 +86,28 @@ contract MondayAPE is Ownable,ERC721A {
         return _uri;
     }
 
+    /// @dev opensea:contractURI: https://docs.opensea.io/docs/contract-level-metadata
+    function contractURI() public view returns (string memory) {
+        return _contractUri;
+    }
+
+    /// @dev ERC2981:Royalty
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721A,IERC165) returns (bool) {
+        return interfaceId == type(IERC2981).interfaceId || super.supportsInterface(interfaceId);
+    }
+
+    /// @dev ERC2981:Royalty
+    function royaltyInfo(uint256 /*_tokenId*/, uint256 _salePrice) public view virtual override returns (address, uint256) {
+        return (Ownable.owner(), _salePrice*5/100);
+    }
+
     /* ===================== admin functions ===================== */
 
     function setURI(string calldata newuri) external onlyOwner {
         _uri = newuri;
+    }
+    function setContractURI(string calldata newuri) external onlyOwner {
+        _contractUri = newuri;
     }
     function setController(address controller) external onlyOwner {
         mintController = controller;

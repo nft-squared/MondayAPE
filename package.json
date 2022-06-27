@@ -6,10 +6,12 @@
     "enode": "hardhat node",
     "tags": "hardhat --network $NETWORK deploy --tags",
     "console": "hardhat --network $NETWORK console",
-    "test": "hardhat test"
+    "test": "hardhat test",
+    "verify": "hardhat verify --network $NETWORK"
   },
   "dependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.4",
+    "@nomiclabs/hardhat-etherscan": "^3.1.0",
     "@openzeppelin/contracts": "^4.4.1",
     "@openzeppelin/contracts-upgradeable": "^4.6.0",
     "@openzeppelin/hardhat-upgrades": "^1.17.0",
