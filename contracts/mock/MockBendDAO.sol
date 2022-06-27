@@ -18,5 +18,8 @@ contract MockBendDAO is ERC721("MockBAPE","MockBAPE") {
         require(nftAsset == address(MOCK_APE), "getBNFTAddresses");
         return (address(this), address(this));
     }
+    function getBNFTRegistry() external view returns (address) {
+        return address(this);
+    }
 }
 
