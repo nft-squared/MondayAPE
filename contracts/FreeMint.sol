@@ -5,35 +5,33 @@ pragma solidity ^0.8.4;
 import {IERC721Upgradeable as IERC721} from '@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol';
 import {OwnableUpgradeable as Ownable} from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 
-import {IBNFTRegistry} from './BendDAO/IBNFTRegistry.sol';
+import { ILendPoolAddressesProvider } from './BendDAO/ILendPoolAddressesProvider.sol';
+import { IBNFTRegistry } from './BendDAO/IBNFTRegistry.sol';
 import { MondayAPE } from './MondayAPE.sol';
 import { Controller } from './Controller.sol';
 
 contract FreeMint is Ownable, Controller {
-    uint16 constant private MAX_SUPPLY = 5000;
-    uint8 constant private MAX_PER_APE = 20;
+    uint16 constant private MAX_SUPPLY = 2500;
     uint8 constant private MAX_PER_ONE = 5;
     struct MintConfig {
         uint32 startTime;
         uint32 endTime;
         uint16 maxSupply;
         uint8 maxPerOne;
-        uint8 maxPerAPE;
     }
     MintConfig public mintConfig;
-    IBNFTRegistry public BNFTRegistry; // bendDao BAYC
+    ILendPoolAddressesProvider public BendDaoProvider; // bendDao BAYC
     IERC721 public BAYC; // BAYC
 
-    function initialize(IBNFTRegistry _BNFTRegistry, IERC721 _BAYC) external initializer {
+    function initialize(ILendPoolAddressesProvider _BendDaoProvider, IERC721 _BAYC) external initializer {
         Ownable.__Ownable_init();
-        BNFTRegistry = _BNFTRegistry;
+        BendDaoProvider = _BendDaoProvider;
         BAYC = _BAYC;
         mintConfig = MintConfig({ 
             startTime: 0,
             endTime: 0,
             maxSupply: MAX_SUPPLY,
-            maxPerOne: MAX_PER_ONE,
-            maxPerAPE: MAX_PER_APE
+            maxPerOne: MAX_PER_ONE
         });
     }
 
@@ -44,6 +42,7 @@ contract FreeMint is Ownable, Controller {
      */
     function apeOwner(uint256 tokenId) public view returns(address) {
 	    address owner = BAYC.ownerOf(tokenId);
+        IBNFTRegistry BNFTRegistry =  IBNFTRegistry(BendDaoProvider.getBNFTRegistry());
 	    (address bBAYC,) = BNFTRegistry.getBNFTAddresses(address(BAYC));
         return owner == address(bBAYC) ? IERC721(address(bBAYC)).ownerOf(tokenId) : owner;
     }
@@ -62,17 +61,16 @@ contract FreeMint is Ownable, Controller {
     /* ===================== admin functions ===================== */
     function setMintTime(uint32 start, uint32 end) external onlyOwner {
         MintConfig memory cfg = mintConfig;
-        require(cfg.startTime == 0 && block.timestamp < start && end > start, "setMintTime");
+        require(end > start, "setMintTime");
         cfg.startTime = start;
         cfg.endTime = end;
         mintConfig = cfg;
     }
 
-    function updateConfig(uint16 maxSupply, uint8 maxPerOne, uint8 maxPerAPE) external onlyOwner {
+    function updateConfig(uint16 maxSupply, uint8 maxPerOne) external onlyOwner {
         MintConfig memory cfg = mintConfig;
         cfg.maxSupply = maxSupply;
         cfg.maxPerOne = maxPerOne;
-        cfg.maxPerAPE = maxPerAPE;
         mintConfig = cfg;
     }
 
