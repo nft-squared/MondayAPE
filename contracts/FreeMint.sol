@@ -47,15 +47,10 @@ contract FreeMint is Ownable, Controller {
 	    (address bBAYC,) = BNFTRegistry.getBNFTAddresses(address(BAYC));
         return owner == address(bBAYC) ? IERC721(address(bBAYC)).ownerOf(tokenId) : owner;
     }
-    ///@dev simple random number
-    function RND() private view returns(uint256) {
-        return uint256(keccak256(abi.encodePacked(msg.sender, block.timestamp)));
-    }
-    ///@dev gets the lowest amount bits of 1 
-    function rndBits(uint256 rnd, uint8 amount) private pure returns(uint256 mask) {
-        for(uint256 i = 0; i < amount; i++) {
-            mask |= rnd&~(rnd-1); rnd &= ~mask;
-        }
+
+    ///@dev gets N bit one 
+    function nBits(uint8 amount) private pure returns(uint256 mask) {
+        return (1<<amount)-1;
     }
     ///@dev mint new MondayAPE
     function mint(uint256 apeId) external {
@@ -65,7 +60,7 @@ contract FreeMint is Ownable, Controller {
         (,uint256 minted) = mondayAPE.apeMinted(apeId);
         require(minted == 0, "already minted");
         require(mondayAPE.totalSupply()+amount <= cfg.maxSupply, "free mint out");
-        uint256 bits = rndBits(RND(), amount);
+        uint256 bits = nBits(amount);
         Controller._mint(apeOwner(apeId), apeId, bits&((1<<mintConfig.maxPerAPE)-1));
     }
 
